@@ -1,17 +1,16 @@
-# Key-Value Memory Networks for Directly Reading Documents
+Key-Value Memory Networks for Directly Reading Docuements in PyTorch
+====================================================================
 
-This project contains code for the Key-Value MemN2N setup in the following paper: "[Key-Value Memory Networks for Directly Reading Documents](https://arxiv.org/abs/1606.03126)".
+PyTorch implementation of ["Key-Value Memory Networks for Directly Reading Documents"](https://arxiv.org/abs/1606.03126). The original torch code from Facebook can be found [here](https://github.com/facebook/MemNN/tree/master/KVmemnn).
 
-## Setup
+Prerequisites
+-------------
+    
+Usage
+-----
 
-This code requires PyTorch to run.
+Performance
+-----------
 
-## Examples
-
-## Library
-
-## Scripts
-
-## References
-
-* Alexander H. Miller, Adam Fisch, Jesse Dodge, Amir-Hossein Karimi, Antoine Bordes, and Jason Weston, "[Key-Value Memory Networks for Directly Reading Documents](https://arxiv.org/abs/1606.03126)", *arXiv:1604.06045 [cs.CL]*.
+Author
+------
