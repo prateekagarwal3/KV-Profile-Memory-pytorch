@@ -1,3 +1,4 @@
+# path = 'data/personachat/train_self_original.txt'
 path = 'data/example_data.txt'
 user_messages = []
 model_response_targets = []
@@ -13,6 +14,7 @@ def parse_persona(profile):
         p = p[13:]
         modified_profile.append(p)
     return modified_profile
+
 with open(path) as read:
     for line in read:
         line = line.strip().replace('\\n', '\n')
@@ -38,10 +40,24 @@ with open(path) as read:
                     model_response_targets.append(line)
             else:
                 model_response_targets.append(line)
-print(model_personas[0])
+
+# for i in range(len(model_response_candidates)):
+#     model_response_candidates[i] = model_response_candidates[i].split('|')
+
+print(len(model_personas))
 print('~~~~~~~~~~~~~')
-print(user_messages[0])
+print(user_messages)
 print('~~~~~~~~~~~~~')
-print(model_response_targets[0])
+print(len(model_response_targets))
 print('~~~~~~~~~~~~~')
-print(model_response_candidates[0])
+print(len(model_response_candidates))
+
+# train_data = []
+# training_example = {}
+# for i in range(len(user_messages)):
+#     training_example["user_message"] = user_messages[i]
+#     training_example["model_response_candidates"] = model_response_candidates[i]
+#     training_example["model_response_target"] = model_response_targets[i]
+#     training_example["model_persona"] = model_personas[0]
+#     train_data.append(training_example)
+# print('no of training examples are {}'.format(len(train_data)))
