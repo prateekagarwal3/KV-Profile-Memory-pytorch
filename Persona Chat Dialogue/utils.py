@@ -2,21 +2,8 @@ import re
 import pickle
 import time
 import os
+import copy
 import numpy as np
-
-def parse_persona(profile):
-    modified_profile = []
-    for p in profile:
-        p = p[13:]
-        modified_profile.append(p)
-    return modified_profile
-
-def split_model_response_candidates(model_response_candidates):
-    model_response_candidates = model_response_candidates.split('|')
-    return model_response_candidates
-
-def tokenize_sent(sent):
-    return re.sub("[^\w]", " ",  sent).split()
 
 def read_data(path):
     user_messages = []
@@ -35,9 +22,9 @@ def read_data(path):
                     if len(user_messages) != 0:
                         for i in range(len(user_messages)):
                             training_example = {}
-                            training_example["user_message"] = [user_messages[i]]
-                            training_example["model_response_candidates"] = model_response_candidates[i]
-                            training_example["model_response"] = [model_response_targets[i]]
+                            training_example["user_message"] = user_messages[0:i+1]
+                            training_example["model_response_candidates"] = copy.deepcopy(model_response_candidates[i])
+                            training_example["model_response"] = model_response_targets[0:i+1]
                             training_example["model_persona"] = model_persona[:]
                             train_data.append(training_example)
                         user_messages = []
@@ -62,20 +49,38 @@ def read_data(path):
                         model_response_targets.append(line)
                 else:
                     model_response_targets.append(line)
-        for i in range(len(user_messages)):
-            training_example = {}
-            training_example["user_message"] = [user_messages[i]]
-            training_example["model_response_candidates"] = model_response_candidates[i]
-            training_example["model_response"] = [model_response_targets[i]]
-            training_example["model_persona"] = model_persona[:]
-            train_data.append(training_example)
+        # for i in range(len(user_messages)):
+        #     training_example = {}
+        #     training_example["user_message"] = [user_messages[0:i+1]][0]
+        #     training_example["model_response_candidates"] = model_response_candidates[0:i+1][0][:]
+        #     training_example["model_response"] = [model_response_targets[0:i+1]][0]
+        #     training_example["model_persona"] = model_persona[:]
+        #     train_data.append(training_example)
     return train_data
 
-def tokenize_data(train_data):
+def parse_persona(profile):
+    modified_profile = []
+    for p in profile:
+        p = p[13:]
+        modified_profile.append(p)
+    return modified_profile
+
+def split_model_response_candidates(model_response_candidates):
+    model_response_candidates = model_response_candidates.split('|')
+    return model_response_candidates
+
+def tokenize_sent(sent):
+    # print(sent)
+    return re.sub("[^\w]", " ",  sent).split()
+
+def tokenize_data(train_data, path):
     for i in range(len(train_data)):
         for j in range(len(train_data[i]["user_message"])):
             train_data[i]["user_message"][j] = tokenize_sent(train_data[i]["user_message"][j])
+        # print(train_data[i]["model_response_candidates"])
         for j in range(len(train_data[i]["model_response_candidates"])):
+            # for k in range(len(train_data[i]["model_response_candidates"][j])):
+                # print(i, j, k)
             train_data[i]["model_response_candidates"][j] = tokenize_sent(train_data[i]["model_response_candidates"][j])
         for j in range(len(train_data[i]["model_response"])):
             train_data[i]["model_response"][j] = tokenize_sent(train_data[i]["model_response"][j])
@@ -125,13 +130,21 @@ def max_mem_calculations():
     # max_mem_size = max(max_mem_size, len(model_response_targets))
     # max_mem_size = max(max_mem_size, len(model_persona))
 
-def vectorize(data, max_mem_len, max_mem_size, w2i):
+def vectorize(data, max_mem_len, max_mem_size, w2i, path):
     train_data = []
     for i in range(len(data)):
         example = {}
         for k in data[i].keys():
+            # if k != "model_response_candidates":
+                # print("~~~~~~~~~")
+                # temp = np.array(data[i][k])
+                # print(temp.shape, k)
+                # for sent in data[i][k]:
+                #     print(sent)
+                # print("~~~~~~~~~")
             mem = []
             for sent in data[i][k]:
+                # print(k)
                 sent = [w2i[word] for word in sent]
                 mem.append(sent)
                 sent += [0] * (max_mem_len - len(sent))
@@ -139,8 +152,21 @@ def vectorize(data, max_mem_len, max_mem_size, w2i):
                 mem.append([0] * max_mem_len)
             example[k] = mem
             mem = np.array(mem)
+            # else:
+                # print("~~~~~~~~~")
+                # temp = np.array(data[i][k])
+                # print(temp.shape, k)
+                # # dialogue_cand_list = []
+                # # for candidate in data[i][k]:
+                # #     mem = []
+                # #     for sent in candidate:
+
+                # #     print(sent)
+                # print("~~~~~~~~~")
+                # print(data[i][k])
         train_data.append(example)
-    pickle.dump(train_data, open('data/pickles/train_data_vectorized.pkl', 'wb'))
+    if(path != 'data/example_data.txt'):
+        pickle.dump(train_data, open('data/pickles/train_data_vectorized.pkl', 'wb'))
     return train_data
 
 def get_data(path):
@@ -148,9 +174,22 @@ def get_data(path):
     max_mem_size = 25
     if(path == 'data/example_data.txt'):
         train_data = read_data(path)
-        train_data = tokenize_data(train_data)
+        # print(train_data[0]["model_response_candidates"])
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print(train_data[1]["model_response_candidates"])
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print(train_data[2]["model_response_candidates"])
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print("~~~~~~~~~")
+        # print(train_data[2])
+        train_data = tokenize_data(train_data, path)
         vocab, freq, w2i = build_vocab(path)
-        train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i)
+        train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i, path)
     else:
         if os.path.exists('data/pickles/train_data_vectorized.pkl'):
             train_data = pickle.load(open('data/pickles/train_data_vectorized.pkl', 'rb'))
@@ -167,12 +206,12 @@ def get_data(path):
             else:
                 vocab, freq, w2i = build_vocab(path)
             train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i)
-    return train_data
+    return train_data, max_mem_len, max_mem_size, len(vocab)
 
 # path = 'data/personachat/train_self_original.txt'
-path = 'data/example_data.txt'
-time1 = time.time()
-train_data = get_data(path)
+# path = 'data/example_data.txt'
+# time1 = time.time()
+# train_data = get_data(path)
 # print(train_data)
 # # print("time taken to load data is {} seconds".format(time.time()-time1))
 
