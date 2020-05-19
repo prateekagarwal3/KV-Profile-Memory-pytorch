@@ -49,13 +49,13 @@ def read_data(path):
                         model_response_targets.append(line)
                 else:
                     model_response_targets.append(line)
-        # for i in range(len(user_messages)):
-        #     training_example = {}
-        #     training_example["user_message"] = [user_messages[0:i+1]][0]
-        #     training_example["model_response_candidates"] = model_response_candidates[0:i+1][0][:]
-        #     training_example["model_response"] = [model_response_targets[0:i+1]][0]
-        #     training_example["model_persona"] = model_persona[:]
-        #     train_data.append(training_example)
+        for i in range(len(user_messages)):
+            training_example = {}
+            training_example["user_message"] = user_messages[0:i+1]
+            training_example["model_response_candidates"] = copy.deepcopy(model_response_candidates[i])
+            training_example["model_response"] = model_response_targets[0:i+1]
+            training_example["model_persona"] = model_persona[:]
+            train_data.append(training_example)
     return train_data
 
 def parse_persona(profile):
@@ -86,8 +86,8 @@ def tokenize_data(train_data, path):
             train_data[i]["model_response"][j] = tokenize_sent(train_data[i]["model_response"][j])
         for j in range(len(train_data[i]["model_persona"])):
             train_data[i]["model_persona"][j] = tokenize_sent(train_data[i]["model_persona"][j])
-    if(path != 'data/example_data.txt'):
-        pickle.dump(train_data, open('data/pickles/train_data.pkl', 'wb'))
+    if(path != 'example_data.txt'):
+        pickle.dump(train_data, open('train_data.pkl', 'wb'))
     return train_data
 
 def build_vocab(path):
@@ -104,10 +104,11 @@ def build_vocab(path):
     for k in freq.keys():
         vocab.append(k)
     w2i = dict((w, i) for i, w in enumerate(vocab, 1))
-    if(path != 'data/example_data.txt'):
-        pickle.dump(vocab, open('data/pickles/vocab.pkl', 'wb'))
-        pickle.dump(freq, open('data/pickles/freq.pkl', 'wb'))
-    return vocab, freq, w2i
+    i2w = dict((i, w) for i, w in enumerate(vocab, 1))
+    # if(path != 'example_data.txt'):
+    #     pickle.dump(vocab, open('vocab.pkl', 'wb'))
+    #     pickle.dump(freq, open('freq.pkl', 'wb'))
+    return vocab, freq, w2i, i2w
 
 def max_mem_calculations():
     max_user_message_len = max([len(x) for y in range(len(train_data)) for x in train_data[y]["user_message"]])
@@ -125,23 +126,11 @@ def max_mem_calculations():
             max_model_persona_len = max(max_model_persona_len, len(x))
     print(max_model_persona_len)
 
-    # max_mem_size = max(max_mem_size, len(user_messages))
-    # max_mem_size = max(max_mem_size, len(model_response_candidates))
-    # max_mem_size = max(max_mem_size, len(model_response_targets))
-    # max_mem_size = max(max_mem_size, len(model_persona))
-
 def vectorize(data, max_mem_len, max_mem_size, w2i, path):
     train_data = []
     for i in range(len(data)):
         example = {}
         for k in data[i].keys():
-            # if k != "model_response_candidates":
-                # print("~~~~~~~~~")
-                # temp = np.array(data[i][k])
-                # print(temp.shape, k)
-                # for sent in data[i][k]:
-                #     print(sent)
-                # print("~~~~~~~~~")
             mem = []
             for sent in data[i][k]:
                 # print(k)
@@ -152,66 +141,29 @@ def vectorize(data, max_mem_len, max_mem_size, w2i, path):
                 mem.append([0] * max_mem_len)
             example[k] = mem
             mem = np.array(mem)
-            # else:
-                # print("~~~~~~~~~")
-                # temp = np.array(data[i][k])
-                # print(temp.shape, k)
-                # # dialogue_cand_list = []
-                # # for candidate in data[i][k]:
-                # #     mem = []
-                # #     for sent in candidate:
-
-                # #     print(sent)
-                # print("~~~~~~~~~")
-                # print(data[i][k])
         train_data.append(example)
-    if(path != 'data/example_data.txt'):
-        pickle.dump(train_data, open('data/pickles/train_data_vectorized.pkl', 'wb'))
+    if(path != 'example_data.txt'):
+        pickle.dump(train_data, open('train_data_vectorized.pkl', 'wb'))
     return train_data
 
 def get_data(path):
     max_mem_len = 38
     max_mem_size = 25
-    if(path == 'data/example_data.txt'):
+    if(path == 'example_data.txt'):
         train_data = read_data(path)
-        # print(train_data[0]["model_response_candidates"])
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print(train_data[1]["model_response_candidates"])
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print(train_data[2]["model_response_candidates"])
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print("~~~~~~~~~")
-        # print(train_data[2])
-        train_data = tokenize_data(train_data, path)
-        vocab, freq, w2i = build_vocab(path)
-        train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i, path)
+        # train_data = tokenize_data(train_data, path)
+        vocab, freq, w2i, i2w = build_vocab(path)
+        # train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i, path)
     else:
-        if os.path.exists('data/pickles/train_data_vectorized.pkl'):
-            train_data = pickle.load(open('data/pickles/train_data_vectorized.pkl', 'rb'))
+        if os.path.exists('train_data_vectorized.pkl'):
+            train_data = pickle.load(open('train_data_vectorized.pkl', 'rb'))
+            vocab, freq, w2i, i2w = build_vocab(path)
         else:
-            if os.path.exists('data/pickles/train_data.pkl'):
-                train_data = pickle.load(open('data/pickles/train_data.pkl', 'rb'))
+            if os.path.exists('train_data.pkl'):
+                train_data = pickle.load(open('train_data.pkl', 'rb'))
             else:
                 train_data = read_data(path)
-                train_data = tokenize_data(train_data)
-
-            if os.path.exists('data/pickles/vocab.pkl') and os.path.exists('data/pickles/freq.pkl'):
-                vocab = pickle.load(open('data/pickles/vocab.pkl', 'rb'))
-                freq = pickle.load(open('data/pickles/freq.pkl', 'rb'))
-            else:
-                vocab, freq, w2i = build_vocab(path)
-            train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i)
-    return train_data, max_mem_len, max_mem_size, len(vocab)
-
-# path = 'data/personachat/train_self_original.txt'
-# path = 'data/example_data.txt'
-# time1 = time.time()
-# train_data = get_data(path)
-# print(train_data)
-# # print("time taken to load data is {} seconds".format(time.time()-time1))
-
+                # train_data = tokenize_data(train_data, path)
+            vocab, freq, w2i, i2w = build_vocab(path)
+            # train_data = vectorize(train_data, max_mem_len, max_mem_size, w2i, path)
+    return train_data, max_mem_len, max_mem_size, len(vocab), w2i, i2w, vocab

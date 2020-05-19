@@ -18,12 +18,12 @@ class KVMemNN(nn.Module):
     def forward(self, q, persona, key, val, cands):
         m = persona.view(-1, self.mem_len) #(bs*mem_size, mem_len)
         m = self.A1(m)
-        m = self.A1_bn(m)
+        # m = self.A1_bn(m)
         m = m.view(-1, self.mem_size, self.mem_len, self.embd_size)
         m = torch.sum(m, dim=2) #(bs, mem_size, embd_size)
 
         cands = self.A1(cands)
-        cands = self.A1_bn(cands)
+        # cands = self.A1_bn(cands)
         cands = cands.view(-1, 20, self.mem_len, self.embd_size)
         cands = torch.sum(cands, dim=2) #(bs, 20, embd_size)
 
@@ -32,7 +32,7 @@ class KVMemNN(nn.Module):
 
         c = persona.view(-1, self.mem_len) #(bs*mem_size, mem_len)
         c = self.A2(c)
-        c = self.A2_bn(c)
+        # c = self.A2_bn(c)
         c = c.view(-1, self.mem_size, self.mem_len, self.embd_size)
         c = torch.sum(c, dim=2) #(bs, mem_size, embd_size)
 
@@ -56,7 +56,7 @@ class KVMemNN(nn.Module):
 
         q = o + q #(bs, embd_size)
         q = self.W(q) #(bs, embd_size)
+        # print(q.size(), cands.size())
         q = torch.bmm(cands, q.unsqueeze(2)).squeeze(2) #(bs, 20)
-        print(F.softmax(q, dim=1))
-        return F.softmax(q, dim=1)
-
+        # print(F.softmax(q, dim=1))
+        return q
